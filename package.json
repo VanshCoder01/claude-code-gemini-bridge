@@ -10,7 +10,7 @@
     "start": "node src/proxy/index.js",
     "setup": "powershell -ExecutionPolicy Bypass -File ./scripts/setup.ps1",
     "accounts": "node src/proxy/cli/accounts.js",
-    "build:installer": "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe /out:Installer.exe /target:exe /optimize+ installer/Installer.cs"
+    "build:installer": "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\csc.exe /out:Installer.exe /target:exe /optimize+ installer\\Installer.cs"
   },
   "keywords": [
     "claude-code",

@@ -97,7 +97,10 @@ if ($userPath -notlike "*$localBin*") {
     [System.Environment]::SetEnvironmentVariable("Path", "$userPath;$localBin", "User")
 }
 # Copy claude-gemini.cmd into localBin
-Copy-Item -Path "$baseDir\bin\claude-gemini.cmd" -Destination "$localBin\claude-gemini.cmd" -Force
+$cmdContent = Get-Content "$baseDir\bin\claude-gemini.cmd" -Raw
+$startProxyPath = "$baseDir\scripts\start-proxy.cmd"
+$cmdContent = $cmdContent.Replace('"%~dp0..\scripts\start-proxy.cmd"', "`"$startProxyPath`"")
+Set-Content -Path "$localBin\claude-gemini.cmd" -Value $cmdContent -Encoding ascii
 Write-Host "      Installed claude-gemini command in PATH ($localBin)" -ForegroundColor Green
 
 # 6. Create Desktop Launcher

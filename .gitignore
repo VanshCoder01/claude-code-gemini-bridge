@@ -20,6 +20,8 @@ server.pid
 Thumbs.db
 .vscode/
 .idea/
+.claude/
+.claude/settings.local.json
 
 # Build artifacts
 *.pdb

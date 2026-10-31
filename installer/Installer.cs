@@ -24,6 +24,38 @@ namespace ClaudeGeminiBridge
                 string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
                 string desktop = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
                 string baseDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\');
+                string bridgeDir = baseDir;
+
+                // Check if running as standalone installer without repo files
+                if (!File.Exists(Path.Combine(bridgeDir, "bin", "claude-gemini.cmd")))
+                {
+                    string targetDir = Path.Combine(userProfile, ".claude-gemini-bridge");
+                    if (!Directory.Exists(targetDir) || !File.Exists(Path.Combine(targetDir, "bin", "claude-gemini.cmd")))
+                    {
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine("    [*] Standalone installer detected. Fetching bridge package...");
+                        Console.ResetColor();
+                        string tempZip = Path.Combine(Path.GetTempPath(), "bridge.zip");
+                        string tempExtract = Path.Combine(Path.GetTempPath(), "bridge-extract");
+                        try
+                        {
+                            if (Directory.Exists(tempExtract)) Directory.Delete(tempExtract, true);
+                            Directory.CreateDirectory(tempExtract);
+                            RunCommand("cmd.exe", "/c curl.exe -sSL https://github.com/VanshCoder01/claude-code-gemini-bridge/archive/refs/heads/main.zip -o \"" + tempZip + "\" && tar.exe -xf \"" + tempZip + "\" -C \"" + tempExtract + "\"");
+                            string extractedFolder = Path.Combine(tempExtract, "claude-code-gemini-bridge-main");
+                            if (Directory.Exists(extractedFolder))
+                            {
+                                if (Directory.Exists(targetDir)) Directory.Delete(targetDir, true);
+                                Directory.Move(extractedFolder, targetDir);
+                            }
+                        }
+                        catch { }
+                    }
+                    if (Directory.Exists(targetDir))
+                    {
+                        bridgeDir = targetDir;
+                    }
+                }
 
                 // 1. Check Node.js
                 Step(1, 7, "Checking Node.js runtime...");
@@ -111,10 +143,13 @@ namespace ClaudeGeminiBridge
                 }
 
                 // Copy runner script to localBin
-                string srcCmd = Path.Combine(baseDir, "bin", "claude-gemini.cmd");
+                string srcCmd = Path.Combine(bridgeDir, "bin", "claude-gemini.cmd");
                 if (File.Exists(srcCmd))
                 {
-                    File.Copy(srcCmd, Path.Combine(localBin, "claude-gemini.cmd"), true);
+                    string startProxyPath = Path.Combine(bridgeDir, "scripts", "start-proxy.cmd");
+                    string cmdText = File.ReadAllText(srcCmd);
+                    cmdText = cmdText.Replace("\"%~dp0..\\scripts\\start-proxy.cmd\"", "\"" + startProxyPath + "\"");
+                    File.WriteAllText(Path.Combine(localBin, "claude-gemini.cmd"), cmdText, Encoding.ASCII);
                 }
                 Success("Updated PATH and registered 'claude-gemini' CLI command.");
 
@@ -130,7 +165,7 @@ namespace ClaudeGeminiBridge
                 // Kill existing port 8085
                 RunCommand("cmd.exe", "/c for /f \"tokens=5\" %a in ('netstat -aon ^| findstr :8085 ^| findstr LISTENING') do taskkill /F /PID %a >nul 2>&1");
 
-                string startScript = Path.Combine(baseDir, "scripts", "start-proxy.cmd");
+                string startScript = Path.Combine(bridgeDir, "scripts", "start-proxy.cmd");
                 if (File.Exists(startScript))
                 {
                     ProcessStartInfo psi = new ProcessStartInfo("cmd.exe", "/c \"" + startScript + "\"");
