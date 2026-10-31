@@ -26,3 +26,6 @@ Thumbs.db
 # Build artifacts
 *.pdb
 *.obj
+*.zip
+dist/
+release/
